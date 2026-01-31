@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LifeLevel — Student</title>
+<style>
+:root{--accent:#667eea;--accent-2:#764ba2;--gold:#FFD700}
+[data-theme="ocean"]{--accent:#00b4d8;--accent-2:#0077b6;--gold:#FFD700}
+[data-theme="sunset"]{--accent:#ff6b6b;--accent-2:#ee5a6f;--gold:#ffd93d}
+[data-theme="forest"]{--accent:#06d6a0;--accent-2:#118ab2;--gold:#ffd166}
+[data-theme="cosmic"]{--accent:#b185db;--accent-2:#7c3aed;--gold:#fbbf24}
+[data-theme="neon"]{--accent:#fb5607;--accent-2:#ff006e;--gold:#ffbe0b}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;margin:0;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#222;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.app{width:1100px;max-width:98%;display:flex;gap:18px}
+.sidebar{width:300px;background:#fff;border-radius:12px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.12)}
+.profile{display:flex;gap:12px;align-items:center}
+.avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#ffd59e,#ffb6c1);display:flex;align-items:center;justify-content:center;font-size:28px}
+.name{font-weight:800;color:var(--accent);font-size:16px}
+.stat{margin-top:12px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin:8px 0}
+.label{font-weight:700}
+.bar{height:12px;background:#eef4ff;border-radius:999px;overflow:hidden;width:100%;margin-left:8px}
+.fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .5s}
+.small{font-size:12px;color:#666;margin-top:6px}
+.panel{flex:1;background:#fff;border-radius:12px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.12);display:flex;flex-direction:column}
+.title{font-weight:900;color:var(--accent);font-size:18px}
+.scene{height:280px;border-radius:12px;border:4px solid var(--gold);margin-top:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#f7fbff,#ffffff);font-size:64px}
+.prompt{margin-top:12px;background:linear-gradient(135deg,#fff8eb,#fff);padding:14px;border-radius:10px;border:2px dashed var(--gold)}
+.q{font-weight:900;text-align:center;margin-bottom:10px;font-size:16px}
+.options{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.opt-btn{padding:10px 12px;border-radius:10px;border:none;background:#fff;font-weight:800;cursor:pointer;border:2px solid rgba(0,0,0,.06)}
+.opt-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none}
+.ai{margin-top:12px;background:#eef6ff;padding:12px;border-radius:10px;border-left:4px solid var(--accent);font-size:13px;color:#123;display:none}
+.hidden{display:none}
+.buttons{display:flex;gap:8px;margin-top:12px;flex-wrap:nowrap;justify-content:center}
+.btn{padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-weight:800;cursor:pointer}
+.level-card{background:#fff;border:3px solid #e0e0e0;border-radius:16px;padding:20px;margin:12px 0;cursor:pointer;transition:all 0.3s;position:relative}
+.level-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,0.15)}
+.level-card.completed{border-color:var(--gold);background:linear-gradient(135deg,#fff8eb,#fff)}
+.level-card.active{border-color:var(--accent);background:linear-gradient(135deg,#f8f9ff,#fff)}
+.level-card.locked{opacity:0.5;cursor:not-allowed;filter:grayscale(80%)}
+.level-card.locked:hover{transform:none;box-shadow:none}
+.level-title{font-size:20px;font-weight:900;color:var(--accent);margin-bottom:6px}
+.level-desc{font-size:13px;color:#666;margin-bottom:12px}
+.level-status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.level-status.completed{background:#28a745;color:#fff}
+.level-status.in-progress{background:#ffc107;color:#333}
+.level-status.locked{background:#dc3545;color:#fff}
+@media (max-width:980px){.app{flex-direction:column}.sidebar{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div style="text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #f0f0f0;">
+      <div style="font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">LifeLevel</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">Financial Literacy Game</div>
+      <div style="margin-top:10px;">
+        <select id="themeSelector" style="padding:6px 10px;border-radius:8px;border:2px solid #e0e0e0;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#666;">
+          <option value="default">🎨 Purple Gradient</option>
+          <option value="ocean">🌊 Ocean Blue</option>
+          <option value="sunset">🌅 Sunset Orange</option>
+          <option value="forest">🌲 Forest Green</option>
+          <option value="cosmic">🌌 Cosmic Purple</option>
+          <option value="neon">⚡ Neon Fire</option>
+        </select>
+      </div>
+    </div>
+    <div class="profile">
+      <div class="avatar" id="avatar">🙂</div>
+      <div><div class="name" id="playerName">Player</div><div class="small">Level 1</div></div>
+    </div>
+    <div class="stat"><div class="stat-row"><div class="label">Happiness</div><div id="valHappy" class="small">10</div></div><div class="bar"><div id="fillHappy" class="fill" style="width:50%"></div></div></div>
+    <div class="stat"><div class="stat-row"><div class="label">Stress</div><div id="valStress" class="small">5</div></div><div class="bar"><div id="fillStress" class="fill" style="width:25%"></div></div></div>
+    <div class="stat"><div class="stat-row"><div class="label">Savings</div><div id="valMoney" class="small">$20</div></div><div class="bar"><div id="fillMoney" class="fill" style="width:10%"></div></div></div>
+    <div class="stat"><div class="stat-row"><div class="label">Opportunities</div><div id="valOpp" class="small">0</div></div><div class="bar"><div id="fillOpp" class="fill" style="width:0%"></div></div></div>
+  </aside>
+
+  <section class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div>
+        <div class="title" id="panelTitle">Select a Level</div>
+        <div class="small" id="panelSubtitle">Choose a level to begin your financial journey</div>
+      </div>
+      <button onclick="logout()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">Logout</button>
+    </div>
+    
+    <!-- Level Selection View -->
+    <div id="levelSelection" style="max-height:500px;overflow-y:auto;padding:8px;">
+      <!-- Level cards will be rendered here -->
+    </div>
+    
+    <!-- Day Selection View (hidden by default) -->
+    <div id="daySelection" style="display:none;">
+      <button onclick="backToLevels()" style="margin-bottom:12px;padding:8px 16px;background:#6c757d;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Back to Levels</button>
+      <div class="buttons">
+        <button id="day1Btn" class="btn">Day 1</button>
+        <button id="day2Btn" class="btn">Day 2</button>
+        <button id="day3Btn" class="btn">Day 3</button>
+        <button id="day4Btn" class="btn">Day 4</button>
+        <button id="day5Btn" class="btn">Day 5</button>
+        <button id="day6Btn" class="btn">Day 6</button>
+        <button id="day7Btn" class="btn">Day 7</button>
+      </div>
+      <div class="scene" id="scene">🎯</div>
+      <div class="prompt" id="decisionWrap"><div class="q" id="questionText">Pick a day to start</div><div class="options" id="optionsWrap"></div><div class="ai" id="aiBox"></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+// Authentication check
+const CURRENT_USER_KEY = 'll_current_user';
+const session = JSON.parse(localStorage.getItem(CURRENT_USER_KEY) || 'null');
+
+// Get student ID from URL parameter or session
+const urlParams = new URLSearchParams(window.location.search);
+const studentId = urlParams.get('studentId') || (session && session.type === 'student' ? session.studentId : null);
+
+// Check authentication
+if (!session || session.type !== 'student' || !studentId || session.studentId !== studentId) {
+  // Not authenticated as this student, redirect to login
+  alert('Please login to access the student portal.');
+  window.location.href = 'index.html';
+}
+
+// Storage key based on student ID
+const STORAGE = `ll_student_${studentId}`;
+const starting = { money:20, stats:{happiness:10,stress:5,opportunities:0}, day:1, answers:{1:[],2:[],3:[],4:[],5:[],6:[],7:[]}, reflections:{}, currentLevel:1, completedLevels:[], attempts:{}, dayStartStates:{} };
+
+// Load or initialize state
+let state = JSON.parse(localStorage.getItem(STORAGE) || 'null');
+if (!state) {
+  state = JSON.parse(JSON.stringify(starting));
+  localStorage.setItem(STORAGE, JSON.stringify(state));
+}
+
+// Ensure state has level tracking and attempt tracking
+if (!state.currentLevel) state.currentLevel = 1;
+if (!state.completedLevels) state.completedLevels = [];
+if (!state.attempts) state.attempts = {};
+if (!state.dayStartStates) state.dayStartStates = {};
+
+// Migrate old happiness/stress values to new values
+if (state.stats.happiness === 50) state.stats.happiness = 10;
+if (state.stats.stress === 50 || state.stats.stress === 10) state.stats.stress = 5;
+localStorage.setItem(STORAGE, JSON.stringify(state));
+
+// Update player name display if studentId is not demo
+if (studentId !== 'demo') {
+  const students = JSON.parse(localStorage.getItem('ll_students') || '{}');
+  const studentName = students[studentId]?.name || studentId;
+  document.getElementById('playerName').textContent = studentName;
+}
+
+// Logout function
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    localStorage.removeItem(CURRENT_USER_KEY);
+    window.location.href = 'index.html';
+  }
+}
+
+// Get student assignments
+function getStudentAssignments() {
+  const assignments = JSON.parse(localStorage.getItem('ll_assignments') || '{}');
+  return assignments[studentId]?.days || [];
+}
+
+// Check if a day is assigned to this student
+function isDayAssigned(day) {
+  const assignedDays = getStudentAssignments();
+  return assignedDays.length === 0 || assignedDays.includes(day);
+}
+
+// Level definitions
+const LEVELS = {
+  1: { name: 'School Life', emoji: '🏫', desc: 'Learn basic money management with allowances and small purchases', days: [1,2,3,4,5,6,7] },
+  2: { name: 'Part-Time Job Era', emoji: '💼', desc: 'Balance work, school, and money while earning your first income', days: [8,9,10,11,12,13,14] },
+  3: { name: 'Big Purchase Goals', emoji: '🎯', desc: 'Set goals, save strategically, and make bigger financial decisions', days: [15,16,17,18,19,20,21] },
+  4: { name: 'Emergencies', emoji: '⚠️', desc: 'Handle unexpected expenses and build financial resilience', days: [22,23,24,25,26,27,28] }
+};
+
+let currentViewLevel = 1;
+
+// Check if a level is completed
+function isLevelComplete(level) {
+  const levelDays = LEVELS[level].days;
+  return levelDays.every(day => {
+    const answers = state.answers[day] || [];
+    return answers.length > 0;
+  });
+}
+
+// Check if a level is unlocked
+function isLevelUnlocked(level) {
+  if (level === 1) return true;
+  return state.completedLevels.includes(level - 1) || isLevelComplete(level - 1);
+}
+
+// Get level status
+function getLevelStatus(level) {
+  if (!isLevelUnlocked(level)) return 'locked';
+  if (isLevelComplete(level)) return 'completed';
+  return 'in-progress';
+}
+
+// Render level cards
+function renderLevelCards() {
+  const container = document.getElementById('levelSelection');
+  container.innerHTML = '';
+  
+  for (let level = 1; level <= 4; level++) {
+    const levelData = LEVELS[level];
+    const status = getLevelStatus(level);
+    const unlocked = isLevelUnlocked(level);
+    
+    const card = document.createElement('div');
+    card.className = `level-card ${status}`;
+    
+    let statusBadge = '';
+    if (status === 'completed') statusBadge = '<span class="level-status completed">Completed</span>';
+    else if (status === 'in-progress') statusBadge = '<span class="level-status in-progress">In Progress</span>';
+    else statusBadge = '<span class="level-status locked">Locked</span>';
+    
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div>
+            <div class="level-title">Level ${level}: ${levelData.name}</div>
+            <div class="level-desc">${levelData.desc}</div>
+          </div>
+        </div>
+        ${statusBadge}
+      </div>
+    `;
+    
+    if (unlocked) {
+      card.onclick = () => selectLevel(level);
+    } else {
+      card.onclick = () => {
+        alert(`Level ${level} is locked! Complete Level ${level-1} first.`);
+      };
+    }
+    
+    container.appendChild(card);
+  }
+}
+
+// Select a level to play
+function selectLevel(level) {
+  currentViewLevel = level;
+  
+  // Check if this is a new level (first time playing it)
+  const firstDayOfLevel = LEVELS[level].days[0];
+  const hasStartedThisLevel = state.answers[firstDayOfLevel] && state.answers[firstDayOfLevel].length > 0;
+  
+  // Reset metrics to fresh values when starting a new level
+  if (!hasStartedThisLevel) {
+    // Level-specific starting values
+    const levelStartingValues = {
+      1: { money: 20, happiness: 10, stress: 5 },
+      2: { money: 15, happiness: 10, stress: 5 },
+      3: { money: 15, happiness: 10, stress: 5 },
+      4: { money: 15, happiness: 10, stress: 5 }
+    };
+    
+    const startValues = levelStartingValues[level] || { money: 20, happiness: 10, stress: 5 };
+    state.money = startValues.money;
+    state.stats.happiness = startValues.happiness;
+    state.stats.stress = startValues.stress;
+    state.stats.opportunities = 0;
+    
+    updateUI();
+  }
+  
+  state.currentLevel = level;
+  save();
+  
+  const levelData = LEVELS[level];
+  document.getElementById('panelTitle').textContent = `Level ${level} — ${levelData.name}`;
+  document.getElementById('panelSubtitle').textContent = levelData.desc;
+  
+  // Show day selection view
+  document.getElementById('levelSelection').style.display = 'none';
+  document.getElementById('daySelection').style.display = 'block';
+  
+  updateDayButtons();
+}
+
+// Go back to level selection
+function backToLevels() {
+  // Check if current level is complete and mark it
+  if (isLevelComplete(currentViewLevel) && !state.completedLevels.includes(currentViewLevel)) {
+    state.completedLevels.push(currentViewLevel);
+    save();
+  }
+  
+  document.getElementById('levelSelection').style.display = 'block';
+  document.getElementById('daySelection').style.display = 'none';
+  document.getElementById('panelTitle').textContent = 'Select a Level';
+  document.getElementById('panelSubtitle').textContent = 'Choose a level to begin your financial journey';
+  
+  renderLevelCards();
+}
+
+const ui = {
+  valHappy: document.getElementById('valHappy'),
+  fillHappy: document.getElementById('fillHappy'),
+  valStress: document.getElementById('valStress'),
+  fillStress: document.getElementById('fillStress'),
+  valMoney: document.getElementById('valMoney'),
+  fillMoney: document.getElementById('fillMoney'),
+  valOpp: document.getElementById('valOpp'),
+  fillOpp: document.getElementById('fillOpp'),
+  scene: document.getElementById('scene'),
+  questionText: document.getElementById('questionText'),
+  optionsWrap: document.getElementById('optionsWrap'),
+  aiBox: document.getElementById('aiBox')
+};
+
+const DECISIONS = {
+  // Day 1
+  '1-1': {
+    q: 'Welcome to School Life! This week, you’ll manage your $20 allowance. Your choices will affect your happiness, stress, savings, and opportunities.\n\nBuy snack on the way to school?',
+    visual: '🏫',
+    options: [
+      { label: 'Buy snack ($2)', effect: { money:-2, savings:-2, happiness:2, stress:0, opportunities:0 } },
+      { label: 'Skip snack and eat the homemade lunch mom provided', effect: { money:0, savings:0, happiness:-1, stress:0, opportunities:1 } }
+    ]
+  },
+  '1-2': {
+    q: 'Do chores to earn money or play video games?',
+    visual: '🏠',
+    options: [
+      { label: 'Do chores to earn money (+$5)', effect: { money:5, savings:5, happiness:-1, stress:1, opportunities:1 } },
+      { label: 'Play video games', effect: { money:0, savings:0, happiness:2, stress:0, opportunities:0 } }
+    ]
+  },
+  // Day 2
+  '2-1': {
+    q: 'Friend invites you to buy a snack?',
+    visual: '👋',
+    options: [
+      { label: 'Buy snack with friend ($3)', effect: { money:-3, savings:-3, happiness:2, stress:0, opportunities:0 } },
+      { label: 'Say no and save money', effect: { money:0, savings:0, happiness:-1, stress:0, opportunities:1 } }
+    ]
+  },
+  '2-2': {
+    q: 'Lost pencil case — replace or borrow?',
+    visual: '✏️',
+    options: [
+      { label: 'Buy new one on the way back home ($3)', effect: { money:-3, savings:-3, happiness:0, stress:-1, opportunities:0 } },
+      { label: 'Borrow from friend', effect: { money:0, savings:0, happiness:0, stress:1, opportunities:-1 } }
+    ]
+  },
+  // Day 3
+  '3-1': {
+    q: 'Lunch Upgrade: Buy extra lunch treat or eat regular lunch?',
+    visual: '🍱',
+    options: [
+      { label: 'Buy extra lunch treat ($4)', effect: { money:-4, savings:-4, happiness:2, stress:0, opportunities:0 } },
+      { label: 'Eat regular lunch', effect: { money:0, savings:0, happiness:-1, stress:0, opportunities:1 } }
+    ]
+  },
+  '3-2': {
+    q: 'Save for school trip?',
+    visual: '🚌',
+    options: [
+      { label: 'Save $5 for trip', effect: { money:-5, savings:-5, happiness:1, stress:0, opportunities:2 } },
+      { label: 'Ignore saving', effect: { money:0, savings:0, happiness:-1, stress:0, opportunities:-2 } }
+    ]
+  },
+  // Day 4
+  '4-1': {
+    q: 'Backpack Zipper Breaks: Spend money in a game or save real money?',
+    visual: '🎮',
+    options: [
+      { label: 'Spend money in a game (in-app purchases)', effect: { money:-5, savings:-5, happiness:2, stress:0, opportunities:0 } },
+      { label: 'Save real money instead', effect: { money:0, savings:0, happiness:-2, stress:0, opportunities:2 } }
+    ]
+  },
+  // Day 5
+  '5-1': {
+    q: 'Friend at school selling candy: Buy or save?',
+    visual: '🍬',
+    options: [
+      { label: 'Buy the candies for my friend’s sake', effect: { money:-3, savings:-3, happiness:2, stress:0, opportunities:0 } },
+      { label: 'Save the money', effect: { money:0, savings:0, happiness:-1, stress:0, opportunities:0 } }
+    ]
+  },
+  '5-2': {
+    q: 'Walking back home, neighbor appears: Help neighbor for money or play video games?',
+    visual: '🏡',
+    options: [
+      { label: 'Help a neighbor and get paid', effect: { money:5, savings:5, happiness:2, stress:0, opportunities:2 } },
+      { label: 'Play video games instead', effect: { money:0, savings:0, happiness:3, stress:0, opportunities:0 } }
+    ]
+  },
+  // Day 6
+  '6-1': {
+    q: 'School canteen: Buy a $2 snack now or $4 snack that lasts longer?',
+    visual: '🏪',
+    options: [
+      { label: 'Buy a $2 snack now', effect: { money:-2, savings:-2, happiness:1, stress:0, opportunities:0 } },
+      { label: 'Buy a $4 snack that lasts longer', effect: { money:-4, savings:-4, happiness:2, stress:-1, opportunities:1 } }
+    ]
+  },
+  '6-2': {
+    q: 'End of week: Donate or spend on yourself?',
+    visual: '🤝',
+    options: [
+      { label: 'Donate money to a charity', effect: { money:-3, savings:-3, happiness:2, stress:2, opportunities:-1 } },
+      { label: 'Buy food for myself from Popeyes', effect: { money:-5, savings:-5, happiness:3, stress:0, opportunities:0 } }
+    ]
+  },
+  // Day 7
+  '7-1': {
+    q: 'School assembly / level completion screen. Final Reflection: What was one smart money choice you made this week, and what would you change next time?',
+    visual: '🎓',
+    isReflection: true,
+    options: [
+      { label: 'Submit Reflection', effect: { money:0, savings:0, happiness:0, stress:0, opportunities:0 } }
+    ]
+  },
+  
+  // LEVEL 2: Part-Time Job Era (Days 8-14)
+  // Day 8 (Day 1 of Level 2)
+  '8-1': {
+    q: 'Welcome to Part-Time Job Era! This week, you\'ll balance school, work, and money. You receive base allowance $15.\n\nAfter school, you see a "Now Hiring" sign. Accept the Job?',
+    visual: '💼',
+    options: [
+      { label: 'Take the part-time job and start today', effect: { money:0, savings:0, happiness:0, stress:1, opportunities:2 } },
+      { label: 'Take the job and start next week', effect: { money:0, savings:0, happiness:1, stress:0, opportunities:-2 } }
+    ]
+  },
+  '8-2': {
+    q: 'First day at work. First Shift Choice:',
+    visual: '☕',
+    options: [
+      { label: 'Work a full shift', effect: { money:10, savings:10, happiness:-1, stress:2, opportunities:1 } },
+      { label: 'Work a short shift', effect: { money:6, savings:6, happiness:0, stress:1, opportunities:0 } }
+    ]
+  },
+  // Day 9 (Day 2 of Level 2)
+  '9-1': {
+    q: 'Walking to school, looks tired. Buy Apples for Breakfast:',
+    visual: '🍎',
+    options: [
+      { label: 'Buy 5 apples for $1.00 (better value)', effect: { money:-1, savings:2, happiness:1, stress:-1, opportunities:1 } },
+      { label: 'Buy 3 apples for $0.75 without comparing', effect: { money:-0.75, savings:-1, happiness:0, stress:1, opportunities:0 } }
+    ]
+  },
+  '9-2': {
+    q: 'After-School Shift:',
+    visual: '💼',
+    options: [
+      { label: 'Go to work', effect: { money:8, savings:8, happiness:-1, stress:1, opportunities:1 } },
+      { label: 'Go home and rest (feeling tired)', effect: { money:0, savings:0, happiness:2, stress:-1, opportunities:0 } }
+    ]
+  },
+  // Day 10 (Day 3 of Level 2)
+  '10-1': {
+    q: 'Lunch table, friends talking about hanging out. Hang Out or Work?',
+    visual: '👥',
+    options: [
+      { label: 'Hang out with friends ($5)', effect: { money:-5, savings:-5, happiness:3, stress:-1, opportunities:0 } },
+      { label: 'Go to work instead', effect: { money:10, savings:10, happiness:-1, stress:2, opportunities:2 } }
+    ]
+  },
+  '10-2': {
+    q: 'Save for a Goal:',
+    visual: '🎯',
+    options: [
+      { label: 'Save $10', effect: { money:-10, savings:-10, happiness:1, stress:0, opportunities:2 } },
+      { label: 'Don\'t save', effect: { money:0, savings:0, happiness:0, stress:0, opportunities:-1 } }
+    ]
+  },
+  // Day 11 (Day 4 of Level 2)
+  '11-1': {
+    q: 'At work, manager approaches. Extra Shift Offered:',
+    visual: '⏰',
+    options: [
+      { label: 'Accept extra shift', effect: { money:12, savings:12, happiness:-2, stress:2, opportunities:2 } },
+      { label: 'Decline extra shift', effect: { money:0, savings:0, happiness:1, stress:-1, opportunities:-1 } }
+    ]
+  },
+  '11-2': {
+    q: 'Buy Dinner After Work:',
+    visual: '🍔',
+    options: [
+      { label: 'Buy fast food ($6)', effect: { money:-6, savings:-6, happiness:3, stress:0, opportunities:0 } },
+      { label: 'Eat at home', effect: { money:0, savings:0, happiness:0, stress:-1, opportunities:1 } }
+    ]
+  },
+  // Day 12 (Day 5 of Level 2)
+  '12-1': {
+    q: 'Checking out some clothes and online shopping. Impulse Buy:',
+    visual: '👕',
+    options: [
+      { label: 'Buy this cute top online ($10)', effect: { money:-10, savings:-10, happiness:3, stress:0, opportunities:0 } },
+      { label: 'Don\'t buy', effect: { money:0, savings:0, happiness:-1, stress:0, opportunities:1 } }
+    ]
+  },
+  '12-2': {
+    q: 'Parents approach you. Help at Home:',
+    visual: '🏠',
+    options: [
+      { label: 'Help parents pay the rent (no pay)', effect: { money:-5, savings:-5, happiness:0, stress:0, opportunities:0 } },
+      { label: 'Ignore and rest', effect: { money:0, savings:0, happiness:2, stress:-1, opportunities:0 } }
+    ]
+  },
+  // Day 13 (Day 6 of Level 2)
+  '13-1': {
+    q: 'Weekend morning. Compare Spending:',
+    visual: '🛒',
+    options: [
+      { label: 'Buy cheap snack ($3)', effect: { money:-3, savings:-3, happiness:1, stress:0, opportunities:0 } },
+      { label: 'Buy meal that lasts ($7)', effect: { money:-7, savings:-7, happiness:2, stress:-1, opportunities:1 } }
+    ]
+  },
+  '13-2': {
+    q: 'Sharing / Giving:',
+    visual: '🤝',
+    options: [
+      { label: 'Donate $5', effect: { money:-5, savings:-5, happiness:2, stress:-1, opportunities:2 } },
+      { label: 'Keep money', effect: { money:0, savings:0, happiness:1, stress:0, opportunities:0 } }
+    ]
+  },
+  // Day 14 (Day 7 of Level 2)
+  '14-1': {
+    q: 'End of week, sitting on bed checking phone. Final Reflection: What was one smart money choice you made this week, and what would you change next time?',
+    visual: '📱',
+    isReflection: true,
+    options: [
+      { label: 'Submit Reflection', effect: { money:0, savings:0, happiness:0, stress:0, opportunities:0 } }
+    ]
+  }
+};
+
+function save(){ localStorage.setItem(STORAGE, JSON.stringify(state)); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function clampAllowNegative(v,min,max){ return v; } // Allow negatives
+
+function updateUI(){
+  ui.valHappy.textContent = state.stats.happiness;
+  // Scale happiness: 10 maps to 50%, so multiply by 5
+  const happinessPercent = clamp(Math.abs(state.stats.happiness) * 5, 0, 100);
+  ui.fillHappy.style.width = happinessPercent+'%';
+  ui.valStress.textContent = state.stats.stress;
+  // Scale stress: 10 maps to 50%, so multiply by 5
+  const stressPercent = clamp(state.stats.stress * 5, 0, 100);
+  ui.fillStress.style.width = stressPercent+'%';
+  ui.valMoney.textContent = '$'+state.money;
+  const moneyPercent = state.money >= 0 ? clamp(Math.round((state.money/200)*100),0,100) : 0;
+  ui.fillMoney.style.width = moneyPercent+'%';
+  ui.valOpp.textContent = state.stats.opportunities;
+  const oppPercent = state.stats.opportunities >= 0 ? clamp(Math.round((state.stats.opportunities/10)*100),0,100) : 0;
+  ui.fillOpp.style.width = oppPercent+'%';
+  
+  // Color bars red if metrics are negative or in danger zone
+  if (state.stats.happiness >= 0) ui.fillHappy.style.background = 'linear-gradient(90deg,#dc3545,#c82333)';
+  else ui.fillHappy.style.background = 'linear-gradient(90deg,var(--accent),var(--accent-2))';
+  
+  if (state.stats.stress <= 7) ui.fillStress.style.background = 'linear-gradient(90deg,#dc3545,#c82333)';
+  else ui.fillStress.style.background = 'linear-gradient(90deg,var(--accent),var(--accent-2))';
+  
+  if (state.money <= 0) ui.fillMoney.style.background = 'linear-gradient(90deg,#dc3545,#c82333)';
+  else ui.fillMoney.style.background = 'linear-gradient(90deg,var(--accent),var(--accent-2))';
+  
+  if (state.stats.opportunities <= 0) ui.fillOpp.style.background = 'linear-gradient(90deg,#dc3545,#c82333)';
+  else ui.fillOpp.style.background = 'linear-gradient(90deg,var(--accent),var(--accent-2))';
+}
+updateUI();
+
+function showDecision(day, qIdx){
+  const qId = day+'-'+(qIdx+1);
+  const d = DECISIONS[qId];
+  if (!d) return;
+  ui.scene.textContent = d.visual;
+  ui.questionText.textContent = d.q;
+  ui.aiBox.style.display = 'none';
+  ui.optionsWrap.innerHTML = '';
+  
+  // Special handling for reflection questions
+  if (d.isReflection) {
+    // Check if reflection already exists
+    const existingReflection = state.reflections?.[day];
+    
+    const textarea = document.createElement('textarea');
+    textarea.id = 'reflectionText';
+    textarea.placeholder = 'Type your reflection here... What did you learn about managing money this week?';
+    textarea.style.cssText = 'width:100%;min-height:150px;padding:12px;border:2px solid var(--accent);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:12px;resize:vertical;';
+    textarea.value = existingReflection || '';
+    ui.optionsWrap.appendChild(textarea);
+    
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'btn';
+    submitBtn.textContent = existingReflection ? '💾 Update Reflection' : '✍️ Submit Reflection';
+    submitBtn.onclick = ()=>{
+      const reflectionText = textarea.value.trim();
+      if (!reflectionText) {
+        alert('Please write your reflection before submitting.');
+        return;
+      }
+      saveReflection(day, qIdx, qId, 0, reflectionText);
+    };
+    ui.optionsWrap.appendChild(submitBtn);
+    
+    // If reflection exists, show a review button
+    if (existingReflection) {
+      const reviewBtn = document.createElement('button');
+      reviewBtn.className = 'btn';
+      reviewBtn.style.marginLeft = '8px';
+      reviewBtn.style.background = 'linear-gradient(135deg,#17a2b8,#138496)';
+      reviewBtn.textContent = '📖 View Summary';
+      reviewBtn.onclick = ()=>showDaySummary(day);
+      ui.optionsWrap.appendChild(reviewBtn);
+    }
+  } else {
+    // Regular decision with options
+    d.options.forEach((opt,idx)=>{
+      const b = document.createElement('button');
+      b.className = 'opt-btn '+(idx===0?'primary':'');
+      b.textContent = opt.label;
+      b.onclick = ()=>chooseOption(day,qIdx,qId,idx);
+      ui.optionsWrap.appendChild(b);
+    });
+  }
+}
+
+function generateAI(before,after,qId,optIdx){
+  const d = DECISIONS[qId];
+  const opt = d.options[optIdx];
+  const e = opt.effect;
+  const dMoney = after.money - before.money;
+  const dHappy = after.stats.happiness - before.stats.happiness;
+  const dStress = after.stats.stress - before.stats.stress;
+  const dOpp = after.stats.opportunities - before.stats.opportunities;
+  // Build a detailed metrics change table
+  let changes = [];
+  function fmtChange(label, beforeVal, afterVal, unit = '', icon = '') {
+    if (beforeVal === afterVal) return '';
+    const diff = afterVal - beforeVal;
+    const sign = diff > 0 ? '+' : '';
+    const color = diff > 0 ? 'green' : 'red';
+    return `<div><b>${icon} ${label}:</b> <span style='color:${color}'>${beforeVal}${unit} → ${afterVal}${unit} (${sign}${diff}${unit})</span></div>`;
+  }
+  changes.push(fmtChange('Savings', before.money, after.money, '$', '💰'));
+  changes.push(fmtChange('Happiness', before.stats.happiness, after.stats.happiness, '', '😊'));
+  changes.push(fmtChange('Stress', before.stats.stress, after.stats.stress, '', '😰'));
+  changes.push(fmtChange('Opportunities', before.stats.opportunities, after.stats.opportunities, '', '🌟'));
+  changes = changes.filter(Boolean).join('');
+  // Generate a more insightful explanation
+  let advice = '';
+  if (dMoney < 0) advice = '💡 Spending reduces your savings. Balance treats with your future goals.';
+  else if (dMoney > 0) advice = '💡 Earning money increases your savings and gives you more choices!';
+  else if (dHappy > 0) advice = '💡 Boosting happiness is important, but balance it with your goals.';
+  else if (dStress < 0) advice = '💡 Reducing stress helps you focus and feel better.';
+  else advice = '💡 Think: does this help my goal or just make today fun?';
+  return `<div><b>${opt.label}</b></div>${changes ? `<div style='margin:6px 0 0 0'>${changes}</div>` : ''}<div style='margin-top:8px'>${advice}</div>`;
+}
+
+function saveReflection(day, qIdx, qId, optIdx, reflectionText) {
+  const already = state.answers[day] || [];
+  if (already.includes(qId)) {
+    // Update existing reflection
+    state.reflections = state.reflections || {};
+    state.reflections[day] = reflectionText;
+    save();
+    
+    ui.aiBox.innerHTML = '<div><b>Reflection Updated!</b></div><div style="margin-top:8px;">Great job reflecting on your financial decisions. Review helps you learn and grow!</div>';
+    ui.aiBox.style.display = 'block';
+    
+    return;
+  }
+  
+  // First time submission
+  const before = JSON.parse(JSON.stringify(state));
+  const opt = DECISIONS[qId].options[optIdx];
+  
+  // Save reflection
+  state.reflections = state.reflections || {};
+  state.reflections[day] = reflectionText;
+  state.answers[day].push(qId);
+  save();
+  updateUI();
+  
+  ui.aiBox.innerHTML = '<div><b>Reflection Saved!</b></div><div style="margin-top:8px;">Excellent work! Reflecting on your choices helps you become smarter with money. Your teacher can now see your insights.</div>';
+  ui.aiBox.style.display = 'block';
+  
+  // Show completion message
+  setTimeout(()=>{ 
+    ui.questionText.textContent = 'Day '+day+' complete';
+    ui.optionsWrap.innerHTML = '';
+    const summaryBtn = document.createElement('button');
+    summaryBtn.className = 'btn';
+    summaryBtn.textContent = 'View Summary';
+    summaryBtn.onclick = ()=>showDaySummary(day);
+    ui.optionsWrap.appendChild(summaryBtn);
+  }, 1500);
+}
+
+function chooseOption(day,qIdx,qId,optIdx){
+  const already = state.answers[day] || [];
+  if (already.includes(qId)) return;
+  
+  // Store day start state if first decision of the day
+  if (!state.dayStartStates[day]) {
+    state.dayStartStates[day] = {
+      money: state.money,
+      happiness: state.stats.happiness,
+      stress: state.stats.stress,
+      opportunities: state.stats.opportunities
+    };
+  }
+  
+  const before = JSON.parse(JSON.stringify(state));
+  const opt = DECISIONS[qId].options[optIdx];
+  const e = opt.effect;
+  
+  // Allow metrics to go negative
+  state.money = state.money + (e.money||0);
+  state.stats.happiness = (state.stats.happiness||0) + (e.happiness||0);
+  state.stats.stress = (state.stats.stress||0) + (e.stress||0);
+  state.stats.opportunities = (state.stats.opportunities||0) + (e.opportunities||0);
+  
+  state.answers[day].push(qId);
+  
+  // Track attempt
+  if (!state.attempts[day]) state.attempts[day] = [];
+  state.attempts[day].push({
+    timestamp: new Date().toISOString(),
+    decisions: JSON.parse(JSON.stringify(state.answers[day])),
+    finalState: {
+      money: state.money,
+      happiness: state.stats.happiness,
+      stress: state.stats.stress,
+      opportunities: state.stats.opportunities
+    }
+  });
+  
+  save();
+  updateUI();
+  const ai = generateAI(before, state, qId, optIdx);
+  ui.aiBox.innerHTML = ai;
+  ui.aiBox.style.display = 'block';
+  document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
+  
+  // Check if more decisions remain for this day
+  const decs = Object.keys(DECISIONS).filter(k => k.startsWith(day+'-'));
+  if (qIdx+1 < decs.length) {
+    // Add Next button to continue to next question
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn';
+    nextBtn.style.marginTop = '12px';
+    nextBtn.textContent = 'Next Question';
+    nextBtn.onclick = ()=>showDecision(day, qIdx+1);
+    ui.optionsWrap.appendChild(nextBtn);
+  } else {
+    // Day complete - validate progression
+    setTimeout(()=>validateDayCompletion(day), 1200);
+  }
+}
+
+for (let d=1; d<=7; ++d) if (!state.answers[d]) state.answers[d]=[];
+
+// Validate day completion and check progression requirements
+function validateDayCompletion(day) {
+  const dayStart = state.dayStartStates[day];
+  const savingsIncrease = state.money - (dayStart?.money || 20);
+  
+  const happiness = state.stats.happiness;
+  const stress = state.stats.stress;
+  const savings = state.money;
+  const opportunities = state.stats.opportunities;
+  
+  let errors = [];
+  if (happiness <= 0) errors.push('Happiness must be greater than 0 (currently: ' + happiness + ')');
+  if (stress >= 7) errors.push('Stress must be less than 7 (currently: ' + stress + ')');
+  if (savings <= 0) errors.push('Savings must be greater than 0 (currently: $' + savings + ')');
+  if (opportunities <= 0) errors.push('Opportunities must be greater than 0 (currently: ' + opportunities + ')');
+  if (savingsIncrease < 1) errors.push('Savings must increase by at least $1 (current change: $' + savingsIncrease + ')');
+  
+  if (errors.length > 0) {
+    // Failed validation - show retry option
+    ui.questionText.textContent = 'Day ' + day + ' - Requirements Not Met';
+    ui.scene.textContent = '⚠️';
+    ui.optionsWrap.innerHTML = '';
+    
+    let errorHTML = '<div style="background:#fff3cd;padding:16px;border-radius:10px;border:2px solid #ffc107;margin-bottom:12px;">';
+    errorHTML += '<div style="font-weight:bold;color:#856404;margin-bottom:8px;">⚠️ You need to meet these requirements to progress:</div>';
+    errorHTML += '<ul style="margin:8px 0;padding-left:20px;color:#856404;line-height:1.8;">';
+    errors.forEach(err => errorHTML += '<li>' + err + '</li>');
+    errorHTML += '</ul>';
+    errorHTML += '<div style="margin-top:12px;font-size:13px;color:#856404;">Attempt #' + (state.attempts[day]?.length || 1) + ' - Review your choices and try again!</div>';
+    errorHTML += '</div>';
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.innerHTML = errorHTML;
+    ui.optionsWrap.appendChild(errorDiv);
+    
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn';
+    retryBtn.style.background = 'linear-gradient(135deg,#ffc107,#ff9800)';
+    retryBtn.textContent = '🔄 Retry Day ' + day;
+    retryBtn.onclick = () => retryDay(day);
+    ui.optionsWrap.appendChild(retryBtn);
+    
+    const viewAttemptsBtn = document.createElement('button');
+    viewAttemptsBtn.className = 'btn';
+    viewAttemptsBtn.style.marginLeft = '8px';
+    viewAttemptsBtn.style.background = 'linear-gradient(135deg,#17a2b8,#138496)';
+    viewAttemptsBtn.textContent = '📊 View Attempts History';
+    viewAttemptsBtn.onclick = () => showAttemptsHistory(day);
+    ui.optionsWrap.appendChild(viewAttemptsBtn);
+    
+    ui.aiBox.style.display = 'none';
+  } else {
+    // Passed validation
+    ui.questionText.textContent = 'Day '+day+' Complete';
+    ui.scene.textContent = '✨';
+    ui.optionsWrap.innerHTML = '';
+    
+    const successDiv = document.createElement('div');
+    successDiv.innerHTML = '<div style="background:#d4edda;padding:16px;border-radius:10px;border:2px solid #28a745;margin-bottom:12px;text-align:center;">' +
+      '<div style="font-size:18px;font-weight:bold;color:#155724;margin-bottom:8px;">Great Job!</div>' +
+      '<div style="color:#155724;font-size:14px;">You met all requirements and can move to the next day!</div>' +
+      '</div>';
+    ui.optionsWrap.appendChild(successDiv);
+    
+    const summaryBtn = document.createElement('button');
+    summaryBtn.className = 'btn';
+    summaryBtn.textContent = 'View Summary';
+    summaryBtn.onclick = ()=>showDaySummary(day);
+    ui.optionsWrap.appendChild(summaryBtn);
+    
+    ui.aiBox.style.display = 'none';
+  }
+}
+
+// Retry a day - reset to start state
+function retryDay(day) {
+  const startState = state.dayStartStates[day];
+  if (startState) {
+    state.money = startState.money;
+    state.stats.happiness = startState.happiness;
+    state.stats.stress = startState.stress;
+    state.stats.opportunities = startState.opportunities;
+  }
+  
+  // Clear answers for this day
+  state.answers[day] = [];
+  save();
+  updateUI();
+  
+  // Restart day
+  showDecision(day, 0);
+}
+
+// Show attempts history
+function showAttemptsHistory(day) {
+  const attempts = state.attempts[day] || [];
+  const startState = state.dayStartStates[day];
+  
+  ui.scene.textContent = '📊';
+  ui.questionText.textContent = `Day ${day} - Attempts History`;
+  ui.optionsWrap.innerHTML = '';
+  ui.aiBox.style.display = 'none';
+  
+  let html = '<div style="max-height:350px;overflow-y:auto;">';
+  
+  if (startState) {
+    html += '<div style="background:#e7f3ff;padding:12px;border-radius:8px;margin-bottom:16px;border:2px solid #2196F3;">';
+    html += '<div style="font-weight:bold;color:#0d47a1;margin-bottom:6px;">🟢 Starting State (Day ' + day + '):</div>';
+    html += '<div style="font-size:13px;color:#1565c0;">Savings: $' + startState.money + ' | Happiness: ' + startState.happiness + ' | Stress: ' + startState.stress + ' | Opportunities: ' + startState.opportunities + '</div>';
+    html += '</div>';
+  }
+  
+  if (attempts.length === 0) {
+    html += '<p style="text-align:center;color:#666;padding:20px;">No attempts recorded yet.</p>';
+  } else {
+    attempts.forEach((attempt, idx) => {
+      const finalState = attempt.finalState;
+      const change = finalState.money - (startState?.money || 20);
+      const passed = finalState.happiness > 0 && finalState.stress < 7 && finalState.money > 0 && finalState.opportunities > 0 && change >= 1;
+      
+      html += '<div style="background:' + (passed ? '#d4edda' : '#f8d7da') + ';padding:12px;border-radius:8px;margin-bottom:12px;border:2px solid ' + (passed ? '#28a745' : '#dc3545') + ';">';
+      html += '<div style="font-weight:bold;color:' + (passed ? '#155724' : '#721c24') + ';margin-bottom:6px;">' + (passed ? 'PASSED' : 'FAILED') + ' - Attempt #' + (idx + 1) + '</div>';
+      html += '<div style="font-size:12px;color:#666;margin-bottom:6px;">' + new Date(attempt.timestamp).toLocaleString() + '</div>';
+      html += '<div style="font-size:13px;color:' + (passed ? '#155724' : '#721c24') + ';">';
+      html += 'Final: Savings: $' + finalState.money + ' (' + (change >= 0 ? '+' : '') + change + ') | ';
+      html += 'Happiness: ' + finalState.happiness + ' | ';
+      html += 'Stress: ' + finalState.stress + ' | ';
+      html += 'Opportunities: ' + finalState.opportunities;
+      html += '</div>';
+      html += '</div>';
+    });
+  }
+  
+  html += '</div>';
+  
+  const historyDiv = document.createElement('div');
+  historyDiv.innerHTML = html;
+  ui.optionsWrap.appendChild(historyDiv);
+  
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn';
+  backBtn.style.marginTop = '12px';
+  backBtn.textContent = 'Back';
+  backBtn.onclick = () => handleDayClick(day, Object.keys(DECISIONS).filter(k => k.startsWith(day+'-')).length);
+  ui.optionsWrap.appendChild(backBtn);
+}
+
+for (let d=1; d<=7; ++d) if (!state.answers[d]) state.answers[d]=[];
+
+// Helper: show summary inline for a day
+function showDaySummary(day) {
+  ui.scene.textContent = '📊';
+  ui.questionText.textContent = `Day ${day} Summary`;
+  ui.aiBox.style.display = 'none';
+  ui.optionsWrap.innerHTML = '';
+  
+  let html = '';
+  const decs = Object.keys(DECISIONS).filter(k => k.startsWith(day+'-'));
+  if (!state.answers[day] || !state.answers[day].length) {
+    html += '<div style="text-align:center;padding:20px;color:#666;">No decisions made yet.</div>';
+  } else {
+    // Show reflection first if it exists (for Day 7)
+    if (state.reflections && state.reflections[day]) {
+      html += `<div style='margin-bottom:20px;padding:16px;background:#fff8eb;border-radius:12px;border:3px solid var(--gold);'>`;
+      html += `<div style='font-weight:bold;margin-bottom:10px;color:var(--accent);font-size:16px;'>📝 Your Reflection:</div>`;
+      html += `<div style='color:#333;line-height:1.6;white-space:pre-wrap;'>${state.reflections[day]}</div>`;
+      html += `<div style='margin-top:12px;padding:10px;background:#f0f8ff;border-radius:6px;font-size:13px;color:#555;'>💡 Reflection shows you're thinking critically about your money choices. This is a key skill for financial success!</div>`;
+      html += '</div>';
+    }
+    decs.forEach((qId, i) => {
+      const idx = state.answers[day].indexOf(qId);
+      if (idx !== -1) {
+        const d = DECISIONS[qId];
+        const optIdx = state.answers[day].findIndex(ans => ans === qId);
+        const chosenOpt = d.options[optIdx];
+        html += `<div style='margin-bottom:16px;padding:12px;background:#f8f9ff;border-radius:8px;border-left:4px solid var(--accent);'>`;
+        html += `<div style='font-weight:bold;margin-bottom:6px;'>Decision ${i+1}:</div>`;
+        html += `<div style='color:#333;margin-bottom:6px;'>${d.q.split('?')[0]}?</div>`;
+        html += `<div style='color:#667eea;font-weight:bold;margin-bottom:8px;'>✓ You chose: ${chosenOpt.label}</div>`;
+        // Detailed financial literacy explanation
+        if (chosenOpt.label.toLowerCase().includes('save')) {
+          html += '<div style="color:#228B22;font-size:13px;line-height:1.5;">💡 Concept: Saving money means putting some aside for future needs or emergencies. It helps you be prepared and reach bigger goals.</div>';
+        } else if (chosenOpt.label.toLowerCase().includes('earn') || chosenOpt.label.toLowerCase().includes('help')) {
+          html += '<div style="color:#228B22;font-size:13px;line-height:1.5;">💡 Concept: Earning money gives you more choices and teaches responsibility. It can help you afford things you want or need later.</div>';
+        } else if (chosenOpt.label.toLowerCase().includes('snack') || chosenOpt.label.toLowerCase().includes('treat') || chosenOpt.label.toLowerCase().includes('candy')) {
+          html += '<div style="color:#DAA520;font-size:13px;line-height:1.5;">💡 Concept: Spending on small treats can be fun and boost happiness, but it reduces your savings. It\'s important to balance fun with saving for the future.</div>';
+        } else if (chosenOpt.label.toLowerCase().includes('donate')) {
+          html += '<div style="color:#1E90FF;font-size:13px;line-height:1.5;">💡 Concept: Donating helps others and can make you feel good, but it also means you have less for yourself. Giving is generous, but always budget for your needs too.</div>';
+        } else {
+          html += '<div style="color:#555;font-size:13px;line-height:1.5;">💡 Concept: Every choice has a financial impact. Think about your goals and how your decisions today affect your future.</div>';
+        }
+        html += '</div>';
+      }
+    });
+  }
+  
+  const summaryDiv = document.createElement('div');
+  summaryDiv.innerHTML = html;
+  summaryDiv.style.maxHeight = '300px';
+  summaryDiv.style.overflowY = 'auto';
+  summaryDiv.style.marginTop = '12px';
+  ui.optionsWrap.appendChild(summaryDiv);
+}
+
+// Free navigation for demo - but check assignments first
+function handleDayClick(day, maxDecisions) {
+  // Check if day is assigned to student
+  if (!isDayAssigned(day)) {
+    ui.scene.textContent = '🔒';
+    ui.questionText.textContent = `Day ${day} is Locked`;
+    ui.optionsWrap.innerHTML = '<div style="text-align:center;padding:20px;color:#dc3545;font-weight:bold;">This day has not been assigned to you yet. Please wait for your teacher to assign it.</div>';
+    ui.aiBox.style.display = 'none';
+    return;
+  }
+  
+  // Store initial state when starting a day
+  if (!state.dayStartStates[day]) {
+    state.dayStartStates[day] = {
+      money: state.money,
+      happiness: state.stats.happiness,
+      stress: state.stats.stress,
+      opportunities: state.stats.opportunities
+    };
+    save();
+  }
+  
+  const answers = state.answers[day] || [];
+  if (answers.length < maxDecisions) {
+    // Continue from where left off or start fresh
+    showDecision(day, answers.length);
+  } else {
+    // Day complete, show summary
+    showDaySummary(day);
+  }
+}
+
+// Update day buttons to show locked/unlocked status
+function updateDayButtons() {
+  const levelData = LEVELS[currentViewLevel];
+  const levelDays = levelData.days; // e.g., [1,2,3,4,5,6,7] or [8,9,10,11,12,13,14]
+  
+  for (let i = 0; i < 7; i++) {
+    const actualDay = levelDays[i]; // The actual day number (1-28)
+    const btn = document.getElementById(`day${i+1}Btn`);
+    if (btn) {
+      // Update button label to show actual day number
+      btn.textContent = `Day ${actualDay}`;
+      
+      // Remove old event listeners by cloning and replacing
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      // Add new event listener with correct day
+      const questionsPerDay = getQuestionsPerDay(actualDay);
+      newBtn.addEventListener('click', () => handleDayClick(actualDay, questionsPerDay));
+      
+      if (isDayAssigned(actualDay)) {
+        newBtn.style.opacity = '1';
+        newBtn.style.cursor = 'pointer';
+        newBtn.disabled = false;
+        newBtn.style.filter = 'none';
+      } else {
+        newBtn.style.opacity = '0.4';
+        newBtn.style.cursor = 'not-allowed';
+        newBtn.disabled = false; // Keep enabled but show locked message on click
+        newBtn.style.filter = 'grayscale(100%)';
+      }
+    }
+  }
+}
+
+// Helper function to determine questions per day
+function getQuestionsPerDay(day) {
+  // Most days have 2 questions, reflection days (7, 14, 21, 28) have 1
+  if ([7, 14, 21, 28].includes(day)) return 1;
+  return 2;
+}
+
+// Initialize UI and update day buttons based on assignments
+updateUI();
+renderLevelCards();
+
+// Theme Management
+const THEME_KEY = `ll_theme_${studentId}`;
+
+// Load saved theme
+function loadTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY) || 'default';
+  applyTheme(savedTheme);
+  document.getElementById('themeSelector').value = savedTheme;
+}
+
+// Apply theme
+function applyTheme(theme) {
+  if (theme === 'default') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+// Theme selector event listener
+document.getElementById('themeSelector').addEventListener('change', (e) => {
+  applyTheme(e.target.value);
+});
+
+// Load theme on page load
+loadTheme();
+</script>
+</body>
+</html>

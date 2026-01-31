@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LifeLevel — Teacher Portal</title>
+<style>
+:root { --accent: #667eea; --accent-2: #764ba2; --gold: #FFD700; }
+* { box-sizing: border-box; }
+body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background: linear-gradient(135deg, var(--accent-2), var(--accent)); margin: 0; padding: 12px; color: #222; min-height: 100vh; }
+.container { max-width: 1200px; margin: 0 auto; }
+.header { color: #fff; text-align: center; margin-bottom: 16px; }
+.nav-tabs { display: flex; justify-content: space-around; margin-bottom: 16px; gap: 8px; }
+.nav-tabs button { flex: 1; padding: 12px; border: none; font-size: 16px; cursor: pointer; border-radius: 10px; background: #fff; color: var(--accent); font-weight: 700; }
+.nav-tabs button.active { background: var(--accent); color: #fff; }
+.section { display: none; }
+.section.active { display: block; }
+.main { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 18px 50px rgba(0, 0, 0, .18); }
+.student-card { background: linear-gradient(135deg, #f8f9ff, #fff); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--accent-2); box-shadow: 0 2px 12px rgba(0, 0, 0, .06); cursor: pointer; transition: transform .2s; }
+.student-card:hover { transform: translateX(4px); }
+.student-card strong { color: var(--accent-2); display: block; margin-bottom: 8px; font-size: 18px; }
+.student-card .metrics { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; font-size: 13px; }
+.student-card .metrics span { background: #eef4ff; padding: 4px 10px; border-radius: 6px; }
+.input-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.input { padding: 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; flex: 1; }
+.btn { background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: transform .16s; }
+.btn:hover { transform: translateY(-2px); }
+.btn-danger { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); }
+.btn-warning { background: linear-gradient(135deg, #ffa500, #ff8c00); }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 9999; }
+.modal-content { background: #fff; padding: 24px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.decision-summary { margin: 16px 0; padding: 12px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid var(--accent); }
+.decision-summary h4 { margin: 0 0 8px 0; color: var(--accent); }
+.day-section { margin-bottom: 16px; padding: 12px; background: #fff; border-radius: 8px; border: 1px solid #e0e0e0; }
+.btn-group { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.week-card { background: linear-gradient(135deg, #f8f9ff, #fff); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 2px solid var(--accent); cursor: pointer; transition: all 0.3s; }
+.week-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2); }
+.week-card h3 { margin: 0 0 12px 0; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+.week-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+.week-stat { background: #fff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0; }
+.week-stat-value { font-size: 20px; font-weight: bold; color: var(--accent); }
+.week-stat-label { font-size: 11px; color: #666; margin-top: 4px; }
+.week-days { display: none; margin-top: 12px; padding-top: 12px; border-top: 2px dashed #e0e0e0; }
+.week-card.expanded .week-days { display: block; }
+.expand-icon { font-size: 14px; transition: transform 0.3s; }
+.week-card.expanded .expand-icon { transform: rotate(180deg); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>LifeLevel — Teacher Portal</h1>
+    <p style="font-size:14px;color:rgba(255,255,255,0.9)">Manage students, view their progress, and track their financial decisions.</p>
+    <div style="margin-top:12px;">
+      <span id="teacherName" style="font-weight:bold;"></span>
+      <button onclick="logout()" style="margin-left:16px;padding:8px 16px;background:#fff;color:var(--accent);border:none;border-radius:8px;font-weight:700;cursor:pointer;">Logout</button>
+    </div>
+  </div>
+
+  <!-- Tabs for Navigation -->
+  <div class="nav-tabs">
+    <button class="tab active" data-tab="welcome">Welcome</button>
+    <button class="tab" data-tab="add-student">Add Students</button>
+    <button class="tab" data-tab="view-students">Manage Students</button>
+    <button class="tab" data-tab="assign-content">Assign Content</button>
+  </div>
+
+  <div class="main">
+    <!-- Welcome Section -->
+    <div id="welcome" class="section active" style="max-height:600px;overflow-y:auto;">
+      <h2 style="color:var(--accent);margin-bottom:20px;">Welcome to LifeLevel</h2>
+      
+      <div style="background:#f8f9ff;padding:20px;border-radius:12px;margin-bottom:24px;border-left:4px solid var(--gold);">
+        <h3 style="margin-top:0;color:var(--accent);">1. What is LifeLevel?</h3>
+        <p>LifeLevel is a <strong>gamified financial literacy web app</strong> designed for students. Learners progress through realistic life scenarios over multiple weeks (levels), making choices that impact four core life metrics:</p>
+        <ul style="margin:12px 0;line-height:1.8;">
+          <li><strong>Happiness</strong></li>
+          <li><strong>Stress</strong></li>
+          <li><strong>Savings</strong></li>
+          <li><strong>Opportunities</strong></li>
+        </ul>
+        <p>Each decision provides instant feedback, helping students understand both short-term and long-term consequences of their financial choices.</p>
+      </div>
+
+      <div style="background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;border:2px solid #e0e0e0;">
+        <h3 style="margin-top:0;color:var(--accent);">2. Program Structure Overview</h3>
+        <h4 style="color:var(--accent-2);">4 Levels = 4 Weeks</h4>
+        <ul style="line-height:1.8;">
+          <li>Each level represents a new stage of life and financial responsibility</li>
+          <li>Students complete one level per week</li>
+          <li><strong>Progression is controlled by the teacher, not the student</strong></li>
+        </ul>
+      </div>
+
+      <div style="background:#f8f9ff;padding:20px;border-radius:12px;margin-bottom:20px;border-left:4px solid var(--accent);">
+        <h3 style="margin-top:0;color:var(--accent);">3. Levels at a Glance</h3>
+        
+        <div style="margin-bottom:16px;padding:12px;background:#fff;border-radius:8px;">
+          <h4 style="color:#667eea;margin-top:0;">Level 1: School Life (Week 1)</h4>
+          <p style="margin:8px 0;"><strong>Focus:</strong> Foundational money skills</p>
+          <ul style="margin:8px 0;line-height:1.6;">
+            <li>Allowance management</li>
+            <li>Small purchases (snacks, games)</li>
+            <li>Helping others vs personal enjoyment</li>
+            <li>Introduction to reflection and consequences</li>
+          </ul>
+        </div>
+
+        <div style="margin-bottom:16px;padding:12px;background:#fff;border-radius:8px;">
+          <h4 style="color:#667eea;margin-top:0;">Level 2: Part-Time Job Era (Week 2)</h4>
+          <p style="margin:8px 0;"><strong>Focus:</strong> Balancing income, school, and wellbeing</p>
+          <ul style="margin:8px 0;line-height:1.6;">
+            <li>Earning money through work shifts</li>
+            <li>Time and energy management</li>
+            <li>Impulse spending vs saving</li>
+            <li>Supporting family and giving back</li>
+          </ul>
+        </div>
+
+        <div style="margin-bottom:16px;padding:12px;background:#fff;border-radius:8px;">
+          <h4 style="color:#667eea;margin-top:0;">Level 3: Big Purchase Goals (Week 3)</h4>
+          <p style="margin:8px 0;"><strong>Focus:</strong> Goal-setting and delayed gratification</p>
+          <ul style="margin:8px 0;line-height:1.6;">
+            <li>Managing larger income amounts</li>
+            <li>SMART savings goals</li>
+            <li>Side hustles and extra income</li>
+            <li>Social pressure and spending temptation</li>
+          </ul>
+        </div>
+
+        <div style="margin-bottom:16px;padding:12px;background:#fff;border-radius:8px;">
+          <h4 style="color:#667eea;margin-top:0;">Level 4: Emergencies (Week 4)</h4>
+          <p style="margin:8px 0;"><strong>Focus:</strong> Financial resilience and preparedness</p>
+          <ul style="margin:8px 0;line-height:1.6;">
+            <li>Emergency funds</li>
+            <li>Unexpected expenses</li>
+            <li>Stress management</li>
+            <li>Decision-making under pressure</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;border:2px solid #e0e0e0;">
+        <h3 style="margin-top:0;color:var(--accent);">4. How Progression Works</h3>
+        <p>Each level contains two required <strong>Progress Gates</strong>:</p>
+        <div style="margin:16px 0;padding:12px;background:#f0f8ff;border-radius:8px;">
+          <h4 style="color:var(--accent-2);margin-top:0;">1. Stability Check (Automatic)</h4>
+          <ul style="line-height:1.6;">
+            <li>System reviews student metrics (e.g., Savings, Stress)</li>
+            <li>Prevents reckless or random decision-making</li>
+            <li>Encourages balanced, thoughtful play</li>
+          </ul>
+        </div>
+        <div style="margin:16px 0;padding:12px;background:#fff8e1;border-radius:8px;">
+          <h4 style="color:var(--accent-2);margin-top:0;">2. Reflection Task (Teacher-Friendly)</h4>
+          <ul style="line-height:1.6;">
+            <li>Short written reflection questions</li>
+            <li>Easy and quick to assess</li>
+            <li>Focuses on reasoning, not perfection</li>
+          </ul>
+        </div>
+        <p style="margin-top:12px;"><strong>Students must complete both gates to unlock the next level.</strong></p>
+      </div>
+
+      <div style="background:#f8f9ff;padding:20px;border-radius:12px;margin-bottom:20px;border-left:4px solid var(--accent);">
+        <h3 style="margin-top:0;color:var(--accent);">5. Visual & Game Elements</h3>
+        <p><strong>Stats bar on the left side displaying:</strong></p>
+        <ul style="line-height:1.8;">
+          <li>Character profile picture</li>
+          <li>Live metric updates</li>
+        </ul>
+        <p style="margin-top:12px;"><strong>Visual feedback animations:</strong></p>
+        <ul style="line-height:1.8;">
+          <li>Happy emoji for positive outcomes</li>
+          <li>Sad emoji for negative outcomes</li>
+          <li>Coins flying for money changes</li>
+        </ul>
+        <p style="margin-top:12px;"><strong>Scene environments evolve with each life stage:</strong></p>
+        <p style="margin:8px 0;font-style:italic;">School → Job → City → Emergency situations</p>
+      </div>
+
+      <div style="background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;border:2px solid #e0e0e0;">
+        <h3 style="margin-top:0;color:var(--accent);">6. Student Portal (What Students See)</h3>
+        <p>All levels are visible, but:</p>
+        <ul style="line-height:1.8;">
+          <li>Levels remain <strong>locked</strong> until unlocked by the teacher</li>
+          <li>Students can only play one active week at a time</li>
+          <li>Real-time feedback after every decision</li>
+          <li>Clear visual cause-and-effect relationships</li>
+          <li>Reflection questions at the end of each level</li>
+        </ul>
+        <p style="margin-top:12px;padding:10px;background:#fff3cd;border-radius:6px;"><strong>Important:</strong> Students cannot unlock levels on their own.</p>
+      </div>
+
+      <div style="background:#f8f9ff;padding:20px;border-radius:12px;margin-bottom:20px;border-left:4px solid var(--gold);">
+        <h3 style="margin-top:0;color:var(--accent);">7. Teacher Portal (What Teachers See)</h3>
+        
+        <h4 style="color:var(--accent-2);">Secure Teacher Access</h4>
+        <ul style="line-height:1.6;">
+          <li>Teachers log in using a Teacher Access Key</li>
+          <li>Ensures only authorized educators can view student data</li>
+        </ul>
+
+        <h4 style="color:var(--accent-2);margin-top:16px;">Teacher Capabilities</h4>
+        <p>Teachers can:</p>
+        <ul style="line-height:1.8;">
+          <li>View individual student metrics (Happiness, Stress, Savings, Opportunities)</li>
+          <li>Track decision patterns and trends</li>
+          <li>See real-time feedback on student choices</li>
+          <li>Lock or unlock levels manually</li>
+          <li>Control classroom pacing (one level per week)</li>
+        </ul>
+
+        <h4 style="color:var(--accent-2);margin-top:16px;">Classroom Setup Process</h4>
+        <ol style="line-height:1.8;">
+          <li>Teacher logs in using the Teacher Key</li>
+          <li>Teacher creates student accounts</li>
+          <li>Each student receives a unique username and passcode</li>
+          <li>Students use these credentials to log in to their portal</li>
+        </ol>
+      </div>
+
+      <div style="background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;border:2px solid #e0e0e0;">
+        <h3 style="margin-top:0;color:var(--accent);">8. Evaluation Structure: How Decisions Are Assessed</h3>
+        
+        <h4 style="color:var(--accent-2);">Decision-Based Evaluation</h4>
+        <ul style="line-height:1.8;">
+          <li>Every choice is pre-weighted with realistic consequences</li>
+          <li>There is <strong>no single "right" answer</strong>, all decisions involve trade-offs</li>
+          <li>Short-term gains may reduce long-term benefits, and vice versa</li>
+        </ul>
+
+        <h4 style="color:var(--accent-2);margin-top:16px;">Example Trade-Offs</h4>
+        <ul style="line-height:1.8;">
+          <li>Spending money may increase <strong>Happiness</strong> but decrease <strong>Savings</strong></li>
+          <li>Saving or planning may lower <strong>Happiness</strong> short-term but increase <strong>Opportunities</strong></li>
+          <li>Poor planning may increase <strong>Stress</strong>, affecting future choices</li>
+        </ul>
+        <p style="margin-top:12px;font-style:italic;">This structure mirrors real-life financial decision-making.</p>
+      </div>
+
+      <div style="background:#f8f9ff;padding:20px;border-radius:12px;margin-bottom:20px;border-left:4px solid var(--accent);">
+        <h3 style="margin-top:0;color:var(--accent);">9. Assessment & Feedback</h3>
+        <p>Built-in reflections provide ready-made assessment points.</p>
+        <p style="margin-top:12px;"><strong>Teachers can:</strong></p>
+        <ul style="line-height:1.8;">
+          <li>Grade reflections</li>
+          <li>Discuss decision-making in class</li>
+          <li>Compare outcomes across different choices</li>
+        </ul>
+        <p style="margin-top:12px;"><strong>The app encourages discussion around:</strong></p>
+        <ul style="line-height:1.8;">
+          <li>Needs vs wants</li>
+          <li>Short-term vs long-term thinking</li>
+          <li>Financial responsibility and planning</li>
+        </ul>
+      </div>
+
+      <div style="background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;border:2px solid #e0e0e0;">
+        <h3 style="margin-top:0;color:var(--accent);">10. Topics Included (Curriculum Alignment)</h3>
+        <p>LifeLevel is aligned with the <strong>Ontario Financial Literacy Curriculum (Grades 1–8)</strong>.</p>
+        <p style="margin-top:12px;">The project began with research into existing financial literacy modules. Topics were refined to focus on core, age-appropriate skills that support strong financial habits.</p>
+        
+        <h4 style="color:var(--accent-2);margin-top:16px;">Curriculum-Aligned Focus Areas</h4>
+        <p>Students learn and are assessed on:</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:12px;">
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Spend vs Save</strong> – immediate use vs future value</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Needs vs Wants</strong> – essentials vs non-essentials</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Budgeting</strong> – managing limited money over time</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Earning Money</strong> – chores, jobs, and income sources</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Comparing Prices</strong> – value, quantity, and cost effectiveness</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Saving Plans</strong> – short- and long-term goal setting</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Sharing & Giving</strong> – helping others and social responsibility</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Impulse vs Planned Spending</strong> – resisting temptation</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Borrowing</strong> – understanding lending and borrowing impact</div>
+          <div style="padding:10px;background:#f0f8ff;border-radius:6px;">• <strong>Digital Money Choices</strong> – in-app purchases and online spending</div>
+        </div>
+        <p style="margin-top:12px;font-style:italic;">These topics are embedded naturally into gameplay, allowing students to learn through experience rather than memorization.</p>
+      </div>
+
+      <div style="background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;padding:24px;border-radius:12px;text-align:center;">
+        <h3 style="margin-top:0;">11. Summary</h3>
+        <p style="font-size:16px;line-height:1.8;">LifeLevel transforms financial literacy into an interactive life simulation. Teachers remain in control, students stay engaged, and learning happens through meaningful decision-making, not lectures.</p>
+      </div>
+    </div>
+
+    <!-- Add New Students Section -->
+    <div id="add-student" class="section">
+      <h2>Add New Students</h2>
+      <p style="color:#666;font-size:14px;">Create a new student account to track their progress through the game.</p>
+      <div class="input-row">
+        <input id="newStudentName" class="input" placeholder="Student Full Name" style="flex:2;">
+        <input id="newStudentUsername" class="input" placeholder="Username" style="flex:1;">
+        <input id="newStudentPasscode" class="input" placeholder="Passcode" style="flex:1;">
+        <button id="addStudent" class="btn">Add Student</button>
+      </div>
+      <div id="addStudentMessage" style="margin-top:12px;font-weight:bold;"></div>
+      <div style="margin-top:16px;padding:12px;background:#f8f9ff;border-radius:8px;border-left:4px solid var(--accent);">
+        <strong>💡 Tip:</strong> Username and passcode will be used by students to login. Keep them simple and share them with the student.
+      </div>
+    </div>
+
+    <!-- View Students Section -->
+    <div id="view-students" class="section">
+      <h2>Manage Students</h2>
+      <p style="color:#666;font-size:14px;margin-bottom:16px;">Click on a student to view their detailed progress and decisions.</p>
+      <div id="studentList">
+        <!-- Students will be rendered dynamically here -->
+      </div>
+    </div>
+
+    <!-- Assign Content Section -->
+    <div id="assign-content" class="section">
+      <h2 style="color:var(--accent);margin-bottom:16px;">Assign Content to Students</h2>
+      <p style="color:#666;margin-bottom:20px;">Select students and assign specific weeks and days. Students can only access content that has been assigned to them.</p>
+      
+      <!-- Student Selection -->
+      <div style="background:#f8f9ff;padding:16px;border-radius:12px;margin-bottom:20px;">
+        <h3 style="color:var(--accent);margin-top:0;">Select Students</h3>
+        <div id="studentCheckboxList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+        <div style="margin-top:12px;">
+          <button onclick="selectAllStudents()" class="btn" style="margin-right:8px;padding:8px 16px;">Select All</button>
+          <button onclick="deselectAllStudents()" class="btn" style="padding:8px 16px;background:#6c757d;">Deselect All</button>
+        </div>
+      </div>
+
+      <!-- Content Assignment -->
+      <div style="background:#fff;border:2px solid #e0e0e0;border-radius:12px;padding:20px;">
+        <h3 style="color:var(--accent);margin-top:0;">📚 Curriculum Content</h3>
+        
+        <!-- Week 1 -->
+        <div style="margin-bottom:24px;border:2px solid #667eea;border-radius:12px;padding:16px;background:#f8f9ff;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <input type="checkbox" id="week1" onchange="toggleWeek(1)" style="width:20px;height:20px;cursor:pointer;">
+            <label for="week1" style="font-size:18px;font-weight:bold;color:#667eea;cursor:pointer;">Week 1: School Life</label>
+          </div>
+          <p style="margin:8px 0 12px 32px;color:#666;font-size:14px;">Foundation of money management through everyday school scenarios</p>
+          <div style="margin-left:32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week1-day" value="1" onchange="updateWeekCheckbox(1)"> Day 1: Allowance</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week1-day" value="2" onchange="updateWeekCheckbox(1)"> Day 2: Snack Choice</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week1-day" value="3" onchange="updateWeekCheckbox(1)"> Day 3: Helping Friend</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week1-day" value="4" onchange="updateWeekCheckbox(1)"> Day 4: Game Purchase</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week1-day" value="5" onchange="updateWeekCheckbox(1)"> Day 5: Charity</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week1-day" value="6" onchange="updateWeekCheckbox(1)"> Day 6: Reflection</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week1-day" value="7" onchange="updateWeekCheckbox(1)"> Day 7: Summary</label>
+          </div>
+        </div>
+
+        <!-- Week 2 -->
+        <div style="margin-bottom:24px;border:2px solid #764ba2;border-radius:12px;padding:16px;background:#faf8ff;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <input type="checkbox" id="week2" onchange="toggleWeek(2)" style="width:20px;height:20px;cursor:pointer;">
+            <label for="week2" style="font-size:18px;font-weight:bold;color:#764ba2;cursor:pointer;">Week 2: Part-Time Job Era</label>
+          </div>
+          <p style="margin:8px 0 12px 32px;color:#666;font-size:14px;">Balancing income, school responsibilities, and wellbeing</p>
+          <div style="margin-left:32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week2-day" value="8" onchange="updateWeekCheckbox(2)"> Day 1: First Job</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week2-day" value="9" onchange="updateWeekCheckbox(2)"> Day 2: Work Schedule</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week2-day" value="10" onchange="updateWeekCheckbox(2)"> Day 3: Impulse Buy</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week2-day" value="11" onchange="updateWeekCheckbox(2)"> Day 4: Help Family</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week2-day" value="12" onchange="updateWeekCheckbox(2)"> Day 5: Weekend Plans</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week2-day" value="13" onchange="updateWeekCheckbox(2)"> Day 6: Reflection</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week2-day" value="14" onchange="updateWeekCheckbox(2)"> Day 7: Summary</label>
+          </div>
+        </div>
+
+        <!-- Week 3 -->
+        <div style="margin-bottom:24px;border:2px solid #17a2b8;border-radius:12px;padding:16px;background:#f0f9ff;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <input type="checkbox" id="week3" onchange="toggleWeek(3)" style="width:20px;height:20px;cursor:pointer;">
+            <label for="week3" style="font-size:18px;font-weight:bold;color:#17a2b8;cursor:pointer;">Week 3: Big Purchase Goals</label>
+          </div>
+          <p style="margin:8px 0 12px 32px;color:#666;font-size:14px;">Goal-setting, delayed gratification, and managing larger amounts</p>
+          <div style="margin-left:32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week3-day" value="15" onchange="updateWeekCheckbox(3)"> Day 1: Dream Item</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week3-day" value="16" onchange="updateWeekCheckbox(3)"> Day 2: Savings Plan</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week3-day" value="17" onchange="updateWeekCheckbox(3)"> Day 3: Side Hustle</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week3-day" value="18" onchange="updateWeekCheckbox(3)"> Day 4: Social Pressure</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week3-day" value="19" onchange="updateWeekCheckbox(3)"> Day 5: Progress Check</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week3-day" value="20" onchange="updateWeekCheckbox(3)"> Day 6: Reflection</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week3-day" value="21" onchange="updateWeekCheckbox(3)"> Day 7: Summary</label>
+          </div>
+        </div>
+
+        <!-- Week 4 -->
+        <div style="margin-bottom:24px;border:2px solid #dc3545;border-radius:12px;padding:16px;background:#fff5f5;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <input type="checkbox" id="week4" onchange="toggleWeek(4)" style="width:20px;height:20px;cursor:pointer;">
+            <label for="week4" style="font-size:18px;font-weight:bold;color:#dc3545;cursor:pointer;">Week 4: Emergencies</label>
+          </div>
+          <p style="margin:8px 0 12px 32px;color:#666;font-size:14px;">Financial resilience, emergency preparedness, and decision-making under pressure</p>
+          <div style="margin-left:32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week4-day" value="22" onchange="updateWeekCheckbox(4)"> Day 1: Emergency Fund</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week4-day" value="23" onchange="updateWeekCheckbox(4)"> Day 2: Unexpected Cost</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week4-day" value="24" onchange="updateWeekCheckbox(4)"> Day 3: Crisis Decision</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week4-day" value="25" onchange="updateWeekCheckbox(4)"> Day 4: Recovery</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week4-day" value="26" onchange="updateWeekCheckbox(4)"> Day 5: Lessons Learned</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week4-day" value="27" onchange="updateWeekCheckbox(4)"> Day 6: Reflection</label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="week4-day" value="28" onchange="updateWeekCheckbox(4)"> Day 7: Final Summary</label>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="margin-top:24px;padding-top:24px;border-top:2px solid #e0e0e0;">
+          <button onclick="assignContent()" class="btn" style="font-size:16px;padding:12px 24px;">Assign Selected Content</button>
+          <button onclick="viewAssignments()" class="btn" style="margin-left:12px;font-size:16px;padding:12px 24px;background:linear-gradient(135deg,#17a2b8,#138496);">👁️ View Assignments</button>
+          <div id="assignmentMessage" style="margin-top:12px;font-weight:bold;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detailed Student Info Modal -->
+<div id="studentDetailsModal" class="modal">
+  <div class="modal-content">
+    <h2 style="color:var(--accent);margin-bottom:16px;">📊 Student Details: <span id="modalStudentName"></span></h2>
+    
+    <div style="background:#f8f9ff;padding:16px;border-radius:8px;margin-bottom:16px;">
+      <h3 style="margin-top:0;">Current Metrics</h3>
+      <div id="detailedMetrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;"></div>
+    </div>
+
+    <div id="decisionsContainer" style="margin-bottom:16px;">
+      <h3>Decision Summary by Day</h3>
+      <div id="decisionsSummary"></div>
+    </div>
+
+    <div class="btn-group">
+      <button id="accessStudentPage" class="btn">Open Student Portal</button>
+      <button id="resetStudentProgress" class="btn btn-warning">Reset Progress</button>
+      <button id="removeStudent" class="btn btn-danger">Delete Student</button>
+      <button id="closeModal" class="btn" style="background:#6c757d;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Authentication check
+const CURRENT_USER_KEY = 'll_current_user';
+const session = JSON.parse(localStorage.getItem(CURRENT_USER_KEY) || 'null');
+
+if (!session || session.type !== 'teacher') {
+  // Not authenticated or not a teacher, redirect to login
+  window.location.href = 'index.html';
+}
+
+// Display teacher name
+if (session) {
+  document.getElementById('teacherName').textContent = `Welcome, ${session.name}`;
+}
+
+// Logout function
+function logout() {
+  if (confirm('Are you sure you want to logout?')) {
+    localStorage.removeItem(CURRENT_USER_KEY);
+    window.location.href = 'index.html';
+  }
+}
+
+// LocalStorage key for all students
+const STUDENTS_KEY = 'll_students';
+
+// Decision data for display
+const DECISIONS = {
+  '1-1': 'Buy snack on the way to school?',
+  '1-2': 'Do chores to earn money or play video games?',
+  '2-1': 'Friend invites you to buy a snack?',
+  '2-2': 'Lost pencil case — replace or borrow?',
+  '3-1': 'Lunch Upgrade: Buy extra lunch treat or eat regular lunch?',
+  '3-2': 'Save for school trip?',
+  '4-1': 'Backpack Zipper Breaks: Spend money in a game or save real money?',
+  '5-1': 'Friend at school selling candy: Buy or save?',
+  '5-2': 'Walking back home, neighbor appears: Help neighbor for money or play video games?',
+  '6-1': 'School canteen: Buy a $2 snack now or $4 snack that lasts longer?',
+  '6-2': 'End of week: Donate or spend on yourself?',
+  '7-1': 'Final Reflection: What was one smart money choice you made this week?'
+};
+
+// Get all students from localStorage
+const getAllStudents = () => JSON.parse(localStorage.getItem(STUDENTS_KEY) || '{}');
+const saveAllStudents = (students) => localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+
+// Get individual student data
+const getStudentData = (studentId) => {
+  const key = `ll_student_${studentId}`;
+  return JSON.parse(localStorage.getItem(key) || 'null');
+};
+
+const saveStudentData = (studentId, data) => {
+  const key = `ll_student_${studentId}`;
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+// ===== ASSIGNMENT MANAGEMENT =====
+
+// Get all assignments from localStorage
+function getAllAssignments() {
+  const data = localStorage.getItem('ll_assignments');
+  return data ? JSON.parse(data) : {};
+}
+
+// Save all assignments to localStorage
+function saveAllAssignments(assignments) {
+  localStorage.setItem('ll_assignments', JSON.stringify(assignments));
+}
+
+// Load student checkboxes for assignment
+function loadStudentCheckboxes() {
+  const students = getAllStudents();
+  const container = document.getElementById('studentCheckboxList');
+  
+  if (!container) return;
+  
+  const studentIds = Object.keys(students);
+  
+  if (studentIds.length === 0) {
+    container.innerHTML = '<p style="color:#666;padding:20px;grid-column:1/-1;text-align:center;">No students available. Add students first.</p>';
+    return;
+  }
+  
+  container.innerHTML = '';
+  studentIds.forEach((id) => {
+    const student = students[id];
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px;background:#fff;border-radius:8px;cursor:pointer;border:2px solid #e0e0e0;transition:all 0.2s;';
+    label.innerHTML = `
+      <input type="checkbox" class="student-checkbox" value="${id}" style="width:18px;height:18px;cursor:pointer;">
+      <span style="font-weight:600;">${student.name}</span>
+    `;
+    label.addEventListener('mouseenter', () => {
+      label.style.borderColor = 'var(--accent)';
+      label.style.background = '#f8f9ff';
+    });
+    label.addEventListener('mouseleave', () => {
+      label.style.borderColor = '#e0e0e0';
+      label.style.background = '#fff';
+    });
+    container.appendChild(label);
+  });
+}
+
+// Select all students
+function selectAllStudents() {
+  document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = true);
+}
+
+// Deselect all students
+function deselectAllStudents() {
+  document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
+}
+
+// Toggle entire week
+function toggleWeek(weekNum) {
+  const weekCheckbox = document.getElementById(`week${weekNum}`);
+  const dayCheckboxes = document.querySelectorAll(`.week${weekNum}-day`);
+  dayCheckboxes.forEach(cb => cb.checked = weekCheckbox.checked);
+}
+
+// Update week checkbox based on day selections
+function updateWeekCheckbox(weekNum) {
+  const weekCheckbox = document.getElementById(`week${weekNum}`);
+  const dayCheckboxes = document.querySelectorAll(`.week${weekNum}-day`);
+  const allChecked = Array.from(dayCheckboxes).every(cb => cb.checked);
+  const someChecked = Array.from(dayCheckboxes).some(cb => cb.checked);
+  
+  weekCheckbox.checked = allChecked;
+  weekCheckbox.indeterminate = someChecked && !allChecked;
+}
+
+// Assign content to selected students
+function assignContent() {
+  const selectedStudents = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => cb.value);
+  const messageEl = document.getElementById('assignmentMessage');
+  
+  if (selectedStudents.length === 0) {
+    messageEl.style.color = '#dc3545';
+    messageEl.textContent = 'Please select at least one student.';
+    return;
+  }
+  
+  // Collect selected days from all weeks
+  const selectedDays = [];
+  for (let week = 1; week <= 4; week++) {
+    const dayCheckboxes = document.querySelectorAll(`.week${week}-day:checked`);
+    dayCheckboxes.forEach(cb => selectedDays.push(parseInt(cb.value)));
+  }
+  
+  if (selectedDays.length === 0) {
+    messageEl.style.color = '#dc3545';
+    messageEl.textContent = 'Please select at least one day to assign.';
+    return;
+  }
+  
+  // Save assignments - teacher override always works regardless of student metrics
+  const assignments = getAllAssignments();
+  selectedStudents.forEach(studentId => {
+    if (!assignments[studentId]) {
+      assignments[studentId] = { days: [] };
+    }
+    // Merge new days with existing, remove duplicates - teacher can reassign anytime
+    const existingDays = assignments[studentId].days || [];
+    const merged = [...new Set([...existingDays, ...selectedDays])];
+    assignments[studentId].days = merged.sort((a, b) => a - b);
+  });
+  
+  saveAllAssignments(assignments);
+  
+  const students = getAllStudents();
+  const studentNames = selectedStudents.map(id => students[id].name).join(', ');
+  
+  messageEl.style.color = '#28a745';
+  messageEl.innerHTML = `Successfully assigned ${selectedDays.length} day(s) to ${selectedStudents.length} student(s):<br><strong>${studentNames}</strong><br><em style="font-size:12px;color:#666;">Teacher assignments override metric requirements.</em>`;
+  
+  setTimeout(() => {
+    messageEl.textContent = '';
+  }, 6000);
+}
+
+// View all assignments
+function viewAssignments() {
+  const assignments = getAllAssignments();
+  const students = getAllStudents();
+  
+  if (Object.keys(assignments).length === 0) {
+    alert('No assignments have been made yet.');
+    return;
+  }
+  
+  let report = '📋 CURRENT ASSIGNMENTS\n\n';
+  
+  for (const [studentId, data] of Object.entries(assignments)) {
+    const studentName = students[studentId]?.name || studentId;
+    const days = data.days || [];
+    
+    if (days.length > 0) {
+      report += `👤 ${studentName}\n`;
+      report += `   Assigned Days: ${days.join(', ')}\n`;
+      report += `   Total: ${days.length} day(s)\n\n`;
+    }
+  }
+  
+  alert(report);
+}
+
+// ===== END ASSIGNMENT MANAGEMENT =====
+
+// Render Student List
+function renderStudentList() {
+  const students = getAllStudents();
+  const studentListEl = document.getElementById('studentList');
+  studentListEl.innerHTML = '';
+
+  const studentIds = Object.keys(students);
+  if (studentIds.length === 0) {
+    studentListEl.innerHTML = '<p style="text-align:center;color:#666;padding:40px;">No students added yet. Add students from the "Add Students" tab.</p>';
+    return;
+  }
+
+  studentIds.forEach((id) => {
+    const studentData = getStudentData(id);
+    const el = document.createElement('div');
+    el.className = 'student-card';
+    
+    const name = students[id].name || id;
+    const money = studentData?.money ?? 20;
+    const happiness = studentData?.stats?.happiness ?? 50;
+    const stress = studentData?.stats?.stress ?? 50;
+    const opportunities = studentData?.stats?.opportunities ?? 0;
+    
+    let completedDays = 0;
+    if (studentData?.answers) {
+      for (let day = 1; day <= 7; day++) {
+        if (studentData.answers[day] && studentData.answers[day].length > 0) {
+          completedDays++;
+        }
+      }
+    }
+
+    el.innerHTML = `
+      <strong>👤 ${name}</strong>
+      <div style="font-size:12px;color:#888;margin:4px 0;">Username: <strong>${students[id].username}</strong> | Passcode: <strong>${students[id].passcode}</strong></div>
+      <div class="metrics">
+        <span>💰 Savings: $${money}</span>
+        <span>😊 Happiness: ${happiness}</span>
+        <span>😰 Stress: ${stress}</span>
+        <span>🌟 Opportunities: ${opportunities}</span>
+      </div>
+      <div style="margin-top:8px;font-size:13px;color:#666;">
+        📅 Days Completed: ${completedDays}/7
+      </div>
+    `;
+    el.addEventListener('click', () => showStudentDetails(id));
+    studentListEl.appendChild(el);
+  });
+}
+
+// Show Detailed Student Info with Decision Summary
+function showStudentDetails(studentId) {
+  const students = getAllStudents();
+  const student = students[studentId];
+  const studentData = getStudentData(studentId);
+  
+  document.getElementById('modalStudentName').textContent = student.name || studentId;
+  
+  // Display current metrics
+  const money = studentData?.money ?? 20;
+  const happiness = studentData?.stats?.happiness ?? 10;
+  const stress = studentData?.stats?.stress ?? 5;
+  const opportunities = studentData?.stats?.opportunities ?? 0;
+  
+  document.getElementById('detailedMetrics').innerHTML = `
+    <div style="background:#fff;padding:12px;border-radius:8px;text-align:center;">
+      <div style="font-size:24px;color:var(--accent);font-weight:bold;">$${money}</div>
+      <div style="font-size:12px;color:#666;">💰 Savings</div>
+    </div>
+    <div style="background:#fff;padding:12px;border-radius:8px;text-align:center;">
+      <div style="font-size:24px;color:#28a745;font-weight:bold;">${happiness}</div>
+      <div style="font-size:12px;color:#666;">😊 Happiness</div>
+    </div>
+    <div style="background:#fff;padding:12px;border-radius:8px;text-align:center;">
+      <div style="font-size:24px;color:#dc3545;font-weight:bold;">${stress}</div>
+      <div style="font-size:12px;color:#666;">😰 Stress</div>
+    </div>
+    <div style="background:#fff;padding:12px;border-radius:8px;text-align:center;">
+      <div style="font-size:24px;color:#ffc107;font-weight:bold;">${opportunities}</div>
+      <div style="font-size:12px;color:#666;">🌟 Opportunities</div>
+    </div>
+  `;
+  
+  // Display decisions organized by weeks
+  let decisionsHTML = '';
+  if (studentData?.answers) {
+    const weeks = [
+      { num: 1, emoji: '🏫', name: 'School Life', days: [1, 2, 3, 4, 5, 6, 7] },
+      { num: 2, emoji: '💼', name: 'Part-Time Job Era', days: [8, 9, 10, 11, 12, 13, 14] },
+      { num: 3, emoji: '🎯', name: 'Big Purchase Goals', days: [15, 16, 17, 18, 19, 20, 21] },
+      { num: 4, emoji: '⚠️', name: 'Emergencies', days: [22, 23, 24, 25, 26, 27, 28] }
+    ];
+    
+    weeks.forEach(week => {
+      // Calculate week stats from attempts
+      let weekStats = { totalDays: 0, completedDays: 0, totalAttempts: 0, avgHappiness: 0, avgStress: 0, totalSavings: 0, avgOpportunities: 0 };
+      let dayDetails = '';
+      
+      week.days.forEach(day => {
+        const dayAnswers = studentData.answers[day] || [];
+        if (dayAnswers.length > 0) {
+          weekStats.completedDays++;
+          
+          // Get attempt data for this day
+          const dayAttempts = studentData.attempts?.[day] || [];
+          weekStats.totalAttempts += dayAttempts.length;
+          
+          // Get the final successful attempt stats
+          if (dayAttempts.length > 0) {
+            const lastAttempt = dayAttempts[dayAttempts.length - 1];
+            if (lastAttempt.finalState) {
+              weekStats.avgHappiness += lastAttempt.finalState.happiness || 0;
+              weekStats.avgStress += lastAttempt.finalState.stress || 0;
+              weekStats.totalSavings += lastAttempt.finalState.money || 0;
+              weekStats.avgOpportunities += lastAttempt.finalState.opportunities || 0;
+            }
+          }
+          
+          // Build day details
+          dayDetails += `<div class="day-section" style="margin-bottom:10px;">
+            <h4 style="margin:0 0 8px 0;color:var(--accent);">📅 Day ${day} ${dayAttempts.length > 0 ? `(${dayAttempts.length} attempt${dayAttempts.length > 1 ? 's' : ''})` : ''}</h4>`;
+          
+          dayAnswers.forEach((choice, index) => {
+            dayDetails += `<div style="margin-bottom:6px;padding:6px 10px;background:#f8f9ff;border-radius:6px;font-size:13px;">
+              <span style="font-weight:bold;color:#333;">Decision ${index + 1}:</span> ${choice}
+            </div>`;
+          });
+          
+          // Show reflection if it's Day 7, 14, 21, or 28
+          if ([7, 14, 21, 28].includes(day) && studentData.reflections?.[day]) {
+            dayDetails += `<div style="margin-top:8px;padding:10px;background:#fff8eb;border-radius:6px;border-left:4px solid var(--gold);">
+              <div style="font-weight:bold;font-size:12px;color:var(--gold);margin-bottom:4px;">📝 Reflection</div>
+              <div style="font-size:12px;color:#666;font-style:italic;">${studentData.reflections[day]}</div>
+            </div>`;
+          }
+          
+          dayDetails += '</div>';
+        }
+        weekStats.totalDays++;
+      });
+      
+      // Calculate averages
+      if (weekStats.completedDays > 0) {
+        weekStats.avgHappiness = Math.round(weekStats.avgHappiness / weekStats.completedDays);
+        weekStats.avgStress = Math.round(weekStats.avgStress / weekStats.completedDays);
+        weekStats.avgOpportunities = Math.round(weekStats.avgOpportunities / weekStats.completedDays);
+      }
+      
+      // Show all weeks (even if not started)
+      const isLocked = weekStats.completedDays === 0;
+      const lockedStyle = isLocked ? 'opacity:0.7;border-color:#ccc;' : '';
+      const lockedBadge = isLocked ? '<span style="background:#dc3545;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;margin-left:8px;">Not Started</span>' : '';
+      
+      decisionsHTML += `
+        <div class="week-card" onclick="toggleWeekExpand(this)" style="${lockedStyle}">
+          <h3>
+            <span>Week ${week.num}: ${week.name} ${lockedBadge}</span>
+            <span style="font-size:14px;color:#666;">${weekStats.completedDays}/${weekStats.totalDays} days completed <span class="expand-icon">v</span></span>
+          </h3>
+          <div class="week-stats">
+            <div class="week-stat">
+              <div class="week-stat-value" style="color:#28a745;">${weekStats.avgHappiness}</div>
+              <div class="week-stat-label">😊 Avg Happiness</div>
+            </div>
+            <div class="week-stat">
+              <div class="week-stat-value" style="color:#dc3545;">${weekStats.avgStress}</div>
+              <div class="week-stat-label">😰 Avg Stress</div>
+            </div>
+            <div class="week-stat">
+              <div class="week-stat-value" style="color:var(--accent);">$${weekStats.totalSavings}</div>
+              <div class="week-stat-label">💰 Total Savings</div>
+            </div>
+            <div class="week-stat">
+              <div class="week-stat-value" style="color:#ffc107;">${weekStats.avgOpportunities}</div>
+              <div class="week-stat-label">🌟 Avg Opps</div>
+            </div>
+          </div>
+          ${weekStats.totalAttempts > 0 ? `<div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px;">Total Attempts: ${weekStats.totalAttempts}</div>` : ''}
+          <div class="week-days">
+            ${dayDetails || '<p style="text-align:center;color:#999;padding:10px;">No days completed yet</p>'}
+          </div>
+        </div>
+      `;
+    });
+    
+    if (!decisionsHTML) {
+      decisionsHTML = '<p style="text-align:center;color:#666;padding:20px;">No decisions made yet.</p>';
+    }
+  } else {
+    decisionsHTML = '<p style="text-align:center;color:#666;padding:20px;">No decisions made yet.</p>';
+  }
+  
+  document.getElementById('decisionsSummary').innerHTML = decisionsHTML;
+  
+  // Set up button actions
+  document.getElementById('accessStudentPage').onclick = () => openStudentPage(studentId);
+  document.getElementById('resetStudentProgress').onclick = () => resetStudentProgress(studentId);
+  document.getElementById('removeStudent').onclick = () => removeStudent(studentId);
+  
+  document.getElementById('studentDetailsModal').style.display = 'flex';
+}
+
+// Open Student Portal for specific student
+function openStudentPage(studentId) {
+  const url = `student-portal.html?studentId=${encodeURIComponent(studentId)}`;
+  window.open(url, '_blank');
+}
+
+// Reset Student Progress
+function resetStudentProgress(studentId) {
+  if (confirm(`Are you sure you want to reset all progress for this student? This action cannot be undone.`)) {
+    const initialState = {
+      money: 20,
+      stats: { happiness: 50, stress: 50, opportunities: 0 },
+      day: 1,
+      answers: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] },
+      reflections: {}
+    };
+    
+    saveStudentData(studentId, initialState);
+    alert('Student progress has been reset.');
+    showStudentDetails(studentId); // Refresh the modal
+    renderStudentList(); // Refresh the list
+  }
+}
+
+// Remove Student
+function removeStudent(studentId) {
+  const students = getAllStudents();
+  const studentName = students[studentId]?.name || studentId;
+  
+  if (confirm(`Are you sure you want to delete ${studentName}? This will permanently remove all their data.`)) {
+    delete students[studentId];
+    saveAllStudents(students);
+    
+    // Remove student data
+    const key = `ll_student_${studentId}`;
+    localStorage.removeItem(key);
+    
+    renderStudentList();
+    alert(`Student ${studentName} has been deleted.`);
+    document.getElementById('studentDetailsModal').style.display = 'none';
+  }
+}
+
+// Toggle Week Card Expansion
+function toggleWeekExpand(weekCard) {
+  weekCard.classList.toggle('expanded');
+}
+
+// Close Modal
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('studentDetailsModal').style.display = 'none';
+});
+
+// Add New Student
+document.getElementById('addStudent').addEventListener('click', () => {
+  const studentName = document.getElementById('newStudentName').value.trim();
+  const username = document.getElementById('newStudentUsername').value.trim();
+  const passcode = document.getElementById('newStudentPasscode').value.trim();
+  const messageEl = document.getElementById('addStudentMessage');
+  
+  if (!studentName || !username || !passcode) {
+    messageEl.style.color = '#dc3545';
+    messageEl.textContent = 'All fields are required.';
+    return;
+  }
+
+  const students = getAllStudents();
+  const studentKey = username.toLowerCase().replace(/\s+/g, '_');
+  
+  // Check if username already exists
+  for (const [id, student] of Object.entries(students)) {
+    if (student.username === username) {
+      messageEl.style.color = '#dc3545';
+      messageEl.textContent = 'Username already exists. Choose a different username.';
+      return;
+    }
+  }
+  
+  if (students[studentKey]) {
+    messageEl.style.color = '#dc3545';
+    messageEl.textContent = 'Student already exists.';
+    return;
+  }
+
+  // Add student to students list
+  students[studentKey] = {
+    name: studentName,
+    username: username,
+    passcode: passcode,
+    createdAt: new Date().toISOString(),
+    createdBy: session.email
+  };
+  saveAllStudents(students);
+  
+  // Initialize student data
+  const initialState = {
+    money: 20,
+    stats: { happiness: 50, stress: 50, opportunities: 0 },
+    day: 1,
+    answers: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] },
+    reflections: {}
+  };
+  saveStudentData(studentKey, initialState);
+
+  messageEl.style.color = '#28a745';
+  messageEl.innerHTML = `Student "${studentName}" added successfully!<br><strong>Username:</strong> ${username} | <strong>Passcode:</strong> ${passcode}`;
+  document.getElementById('newStudentName').value = '';
+  document.getElementById('newStudentUsername').value = '';
+  document.getElementById('newStudentPasscode').value = '';
+  
+  renderStudentList();
+  
+  setTimeout(() => {
+    messageEl.textContent = '';
+  }, 3000);
+});
+
+// Tab Navigation
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    const target = tab.dataset.tab;
+    document.querySelectorAll('.section').forEach((section) => {
+      section.classList.remove('active');
+      if (section.id === target) {
+        section.classList.add('active');
+        // Load student checkboxes when switching to assignment tab
+        if (target === 'assign-content') {
+          loadStudentCheckboxes();
+        }
+      }
+    });
+  });
+});
+
+// Render Initial Student List
+renderStudentList();
+</script>
+</body>
+</html>

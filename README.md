@@ -1,13 +1,16 @@
 # LifeLevel
 
-LifeLevel is an engaging financial literacy game designed for kids and teens. The game aims to teach essential money management skills through interactive gameplay, allowing players to make decisions that impact their virtual lives and finances.
+LifeLevel is an interactive financial literacy game for kids and teens that simulates real-life money decisions. Players progress through structured levels and weeks, making daily choices that impact their finances and key life metrics. Teachers can manage students, assign content, and monitor progress through a dedicated portal, ensuring guided and accountable learning.
 
 ## Features
 
-- **Structured Level Progression**: Players advance through various levels, each presenting unique challenges and decisions related to financial literacy.
-- **Simulated Money System**: The game includes a wallet system that tracks income, expenses, and savings, providing a realistic experience of managing finances.
-- **Life Stats Tracking**: Players' happiness, stress, savings, and opportunities are monitored, allowing them to see the consequences of their decisions.
-- **Reflection System**: Weekly reflection prompts encourage players to think critically about their choices and learn from their experiences.
+- Decisions Power the Learning: Every choice affects students’ progress, showing real consequences and helping them learn cause and effect in financial and life decisions.
+- Real-Time Accountability: Students see how their actions impact Happiness, Stress, Savings, and Opportunities instantly, encouraging responsibility and smart choices.
+- Game Structured Like Real Life: LifeLevel simulates real-world challenges with growing complexity, teaching adaptability, planning, and decision-making skills.
+- Built-In Evaluation System: Each level tracks performance and patterns, letting students and teachers see progress and areas to improve.
+- Teacher Guide and Support: A complete guide helps teachers integrate the game into lessons, assign levels, and monitor student growth.
+- Engaging Visual and Interactive Experience: Fun avatars, animations, and visual feedback make learning enjoyable, immersive, and memorable.
+
 
 ## Getting Started
 

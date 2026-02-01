@@ -4,12 +4,12 @@ LifeLevel is an interactive financial literacy game for kids and teens that simu
 
 ## Features
 
-- Decisions Power the Learning: Every choice affects students’ progress, showing real consequences and helping them learn cause and effect in financial and life decisions.
-- Real-Time Accountability: Students see how their actions impact Happiness, Stress, Savings, and Opportunities instantly, encouraging responsibility and smart choices.
-- Game Structured Like Real Life: LifeLevel simulates real-world challenges with growing complexity, teaching adaptability, planning, and decision-making skills.
-- Built-In Evaluation System: Each level tracks performance and patterns, letting students and teachers see progress and areas to improve.
-- Teacher Guide and Support: A complete guide helps teachers integrate the game into lessons, assign levels, and monitor student growth.
-- Engaging Visual and Interactive Experience: Fun avatars, animations, and visual feedback make learning enjoyable, immersive, and memorable.
+- **Decisions Power the Learning:** Every choice affects students’ progress, showing real consequences and helping them learn cause and effect in financial and life decisions.
+- **Real-Time Accountability:** Students see how their actions impact Happiness, Stress, Savings, and Opportunities instantly, encouraging responsibility and smart choices.
+- **Game Structured Like Real Life:** LifeLevel simulates real-world challenges with growing complexity, teaching adaptability, planning, and decision-making skills.
+- **Built-In Evaluation System:** Each level tracks performance and patterns, letting students and teachers see progress and areas to improve.
+- **Teacher Guide and Support:** A complete guide helps teachers integrate the game into lessons, assign levels, and monitor student growth.
+- **Engaging Visual and Interactive Experience:** Fun avatars, animations, and visual feedback make learning enjoyable, immersive, and memorable.
 
 
 ## Getting Started
